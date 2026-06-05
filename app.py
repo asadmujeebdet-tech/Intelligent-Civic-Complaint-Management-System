@@ -1,34 +1,11 @@
-"""
-CivicLens AI
-
-Local:  streamlit run app.py  → full HTML UI (same as run_server.py)
-Cloud:  streamlit run app.py  → native Streamlit pages (sidebar navigation)
-        python run_server.py  → HTML UI at http://localhost:8000
-"""
-import logging
+"""Use run_server.py instead:  streamlit run run_server.py"""
 import sys
 
-logging.basicConfig(level=logging.INFO)
-
 if "streamlit" in sys.modules:
-    from backend.app.deployment_config import should_use_html_iframe
+    import runpy
 
-    if should_use_html_iframe():
-        from streamlit_ui.shell import render_civiclens_app
-
-        render_civiclens_app("/")
-    else:
-        from streamlit_ui.native_home import render_native_app
-
-        render_native_app()
-
+    runpy.run_path("run_server.py", run_name="__main__")
 elif __name__ == "__main__":
-    import uvicorn
+    import runpy
 
-    uvicorn.run(
-        "backend.app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info",
-    )
+    runpy.run_path("run_server.py", run_name="__main__")
