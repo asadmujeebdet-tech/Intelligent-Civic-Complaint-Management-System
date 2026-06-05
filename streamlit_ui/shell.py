@@ -1,4 +1,4 @@
-"""Embed the same HTML UI served by run_server.py inside Streamlit."""
+"""Embed the CivicLens HTML UI inside Streamlit."""
 import os
 import socket
 import threading
@@ -43,6 +43,31 @@ CHROME_HIDE_CSS = """
 """
 
 
+def _frontend_url() -> str:
+    """Public HTTPS URL of the deployed frontend (Netlify). Required on Streamlit Cloud."""
+    return os.getenv("FRONTEND_URL", "").strip().rstrip("/")
+
+
+def _is_streamlit_cloud() -> bool:
+    return bool(
+        os.getenv("STREAMLIT_SHARING")
+        or os.getenv("STREAMLIT_SHARING_MODE")
+        or ".streamlit.app" in os.getenv("HOSTNAME", "")
+    )
+
+
+def _resolve_app_url(path: str) -> tuple[str, bool]:
+    """
+    Return (url, needs_local_server).
+    Streamlit Cloud must use FRONTEND_URL (Netlify) — localhost iframes fail in the browser.
+    """
+    frontend = _frontend_url()
+    if frontend:
+        base = frontend
+        return f"{base}{path}", False
+    return f"{API_BASE}{path}", True
+
+
 def _api_healthy(base: str = API_BASE) -> bool:
     try:
         with urllib.request.urlopen(f"{base}/health", timeout=2) as resp:
@@ -70,7 +95,7 @@ def _run_api_server() -> None:
 
 
 def ensure_api_server(max_wait_seconds: float = 45.0) -> bool:
-    """Reuse an existing API on port 8000, or start one if the port is free."""
+    """Reuse an existing local API, or start one if the port is free."""
     ready_key = f"api_ready_{API_HOST}_{API_PORT}"
     start_key = f"api_start_attempted_{API_HOST}_{API_PORT}"
 
@@ -81,10 +106,7 @@ def ensure_api_server(max_wait_seconds: float = 45.0) -> bool:
         st.session_state[ready_key] = True
         return True
 
-    port_busy = _port_open(API_PORT)
-
-    # Port taken (e.g. run_server.py already running) — never start a second server
-    if port_busy:
+    if _port_open(API_PORT):
         deadline = time.time() + max_wait_seconds
         while time.time() < deadline:
             if _api_healthy():
@@ -93,7 +115,6 @@ def ensure_api_server(max_wait_seconds: float = 45.0) -> bool:
             time.sleep(0.4)
         return False
 
-    # Port free — start at most one background server per Streamlit session
     if not st.session_state.get(start_key):
         st.session_state[start_key] = True
         thread = threading.Thread(target=_run_api_server, daemon=True)
@@ -110,7 +131,7 @@ def ensure_api_server(max_wait_seconds: float = 45.0) -> bool:
 
 
 def render_civiclens_app(path: str = "/") -> None:
-    """Full-viewport iframe to the HTML UI (same as run_server.py)."""
+    """Full-viewport iframe to the HTML UI."""
     st.set_page_config(
         page_title="CivicLens AI",
         page_icon="🏛️",
@@ -119,31 +140,38 @@ def render_civiclens_app(path: str = "/") -> None:
     )
     st.markdown(CHROME_HIDE_CSS, unsafe_allow_html=True)
 
-    with st.spinner("Loading CivicLens AI…"):
-        ready = ensure_api_server()
+    url, needs_local = _resolve_app_url(path)
 
-    if not ready:
-        port_busy = _port_open(API_PORT)
-        st.markdown(
-            """
-            <div class="civiclens-loader">
-                <h2>CivicLens AI</h2>
-                <p>Could not connect to the application server.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
+    if needs_local:
+        with st.spinner("Loading CivicLens AI…"):
+            ready = ensure_api_server()
+        if not ready:
+            port_busy = _port_open(API_PORT)
+            st.markdown(
+                '<div class="civiclens-loader"><h2>CivicLens AI</h2>'
+                "<p>Could not connect to the application server.</p></div>",
+                unsafe_allow_html=True,
+            )
+            if port_busy:
+                st.error(
+                    f"Port {API_PORT} is in use but `{API_BASE}/health` did not respond. "
+                    "Stop the other process, or set `API_PORT` to a free port."
+                )
+            else:
+                st.error(
+                    f"API did not respond at {API_BASE}. "
+                    "Run `python run_server.py` locally, or set `FRONTEND_URL` for cloud deploy."
+                )
+            return
+    elif _is_streamlit_cloud() and not _frontend_url():
+        st.error(
+            "Streamlit Cloud requires **FRONTEND_URL** in app secrets "
+            "(your Netlify site URL, e.g. `https://civiclens.netlify.app`). "
+            "Localhost cannot be embedded from the cloud."
         )
-        if port_busy:
-            st.error(
-                f"Port {API_PORT} is in use but `{API_BASE}/health` did not respond. "
-                "Stop the other process on that port, or set `API_PORT` to a free port."
-            )
-        else:
-            st.error(
-                f"API did not respond at {API_BASE}. "
-                "Check MongoDB credentials in `.env`, or run `python run_server.py` first."
-            )
+        st.info("Deploy the frontend on Netlify, set `API_URL` there to your Render API, "
+                "then add `FRONTEND_URL` here in Streamlit → Settings → Secrets.")
         return
 
-    url = f"{API_BASE}{path}"
-    st.iframe(url, height=900, scrolling=False)
+    # st.iframe accepts: src, width, height, tab_index (no scrolling param)
+    st.iframe(url, height=900, width="stretch")

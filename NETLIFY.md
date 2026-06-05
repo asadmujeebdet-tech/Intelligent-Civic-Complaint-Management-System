@@ -144,6 +144,21 @@ Update `EXTRA_ALLOWED_ORIGINS` on Render with the new Netlify domain and redeplo
 
 ---
 
+## Streamlit Cloud (optional shell)
+
+If you also deploy on **Streamlit Cloud**, add this secret:
+
+```toml
+FRONTEND_URL = "https://your-site.netlify.app"
+```
+
+Streamlit will iframe your Netlify UI (same look as `run_server.py`).  
+`API_URL` stays on **Netlify** only — not in Streamlit secrets.
+
+See `.streamlit/secrets.toml.example`.
+
+---
+
 ## Local development (unchanged)
 
 ```bash
