@@ -1,62 +1,93 @@
-# Deploy CivicLens AI on Streamlit Cloud
+# Streamlit Cloud + run_server UI
 
-This app runs **natively on Streamlit Cloud** — no Netlify, no iframe, no separate frontend host.
+You get the **exact same Bootstrap UI** as `python run_server.py`, deployed through Streamlit Cloud.
 
-## Prerequisites
+Streamlit Cloud cannot run the FastAPI/HTML server by itself. The setup is:
 
-1. GitHub repo with this code
-2. [MongoDB Atlas](https://www.mongodb.com/atlas) free cluster
-3. Google **Gemini API** key (for AI features)
-
-## Deploy steps
-
-1. Push code to GitHub.
-2. Go to [share.streamlit.io](https://share.streamlit.io) → **Create app**.
-3. Select your repo, branch, and set **Main file path** to `app.py`.
-4. Open **Advanced settings** → add secrets (copy from `.streamlit/secrets.toml.example`):
-
-```toml
-MONGO_URI = "mongodb+srv://..."
-DB_NAME = "hackathon"
-GEMINI_API_KEY = "..."
-GOOGLE_MAP_API_KEY = "..."
+```
+┌─────────────────────┐      iframe       ┌──────────────────────────────┐
+│  Streamlit Cloud    │  ──────────────►  │  Render (run_api.py)         │
+│  app.py (shell)     │                   │  Same UI as run_server.py    │
+│  yourapp.streamlit  │                   │  yourapp.onrender.com        │
+└─────────────────────┘                   └──────────────────────────────┘
 ```
 
-5. Click **Deploy**.
+---
 
-First deploy may take several minutes (ML dependencies download).
+## Step 1 — MongoDB Atlas
 
-## App structure
+1. Create a free cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas)
+2. Allow network access `0.0.0.0/0`
+3. Copy connection string → `MONGO_URI`
 
-| File | Page |
-|------|------|
-| `app.py` | Home — hero, KPIs, quick actions |
-| `pages/1_Report_Issue.py` | Submit complaint |
-| `pages/2_Track_Status.py` | Track by ID + feedback |
-| `pages/3_Analytics.py` | Dashboard with charts |
-| `pages/4_Admin.py` | Manage complaints |
+---
 
-Navigation uses the **sidebar** (same pages as the HTML UI).
+## Step 2 — Deploy full app on Render (~5 min)
+
+1. Push this repo to GitHub
+2. [render.com](https://render.com) → **New** → **Blueprint** → connect repo
+3. Set secrets when asked:
+
+| Variable | Example |
+|----------|---------|
+| `MONGO_URI` | `mongodb+srv://...` |
+| `GEMINI_API_KEY` | your key |
+| `GOOGLE_MAP_API_KEY` | optional |
+| `EXTRA_ALLOWED_ORIGINS` | `https://yourapp.streamlit.app` |
+
+4. Wait for deploy → copy URL, e.g. `https://civiclens-app.onrender.com`
+5. Open that URL in browser — you should see the **same UI** as localhost:8000
+
+> Free Render sleeps after 15 min idle. First load after sleep takes ~30–60s.
+
+---
+
+## Step 3 — Streamlit Cloud
+
+1. [share.streamlit.io](https://share.streamlit.io) → **Create app**
+2. Repo + branch + **Main file:** `app.py`
+3. **Secrets:**
+
+```toml
+APP_URL = "https://civiclens-app.onrender.com"
+```
+
+4. Deploy
+
+Your Streamlit URL now shows the full HTML UI inside an iframe — identical to `run_server.py`.
+
+---
 
 ## Local development
 
 ```bash
-# Streamlit (same as cloud)
-streamlit run app.py
-
-# Full HTML UI + API (optional)
+# Option A — direct (best for dev)
 python run_server.py
+# → http://localhost:8000
+
+# Option B — Streamlit shell (auto-starts local server)
+streamlit run app.py
+# → http://localhost:8501
 ```
+
+---
 
 ## Troubleshooting
 
-| Issue | Fix |
-|-------|-----|
-| Database connection failed | Check `MONGO_URI` in Secrets; allow `0.0.0.0/0` in Atlas Network Access |
-| App crashes on startup | Check deploy logs; ensure `requirements.txt` installs cleanly |
-| AI features fail | Set `GEMINI_API_KEY` in Secrets |
-| Slow cold start | Normal on free tier — sentence-transformers loads on first run |
+| Problem | Solution |
+|---------|----------|
+| Blank iframe on Streamlit Cloud | Set `APP_URL` in secrets (Render URL, no trailing `/`) |
+| "Cannot reach /health" | Wake Render app — open Render URL directly first |
+| Port 8000 in use locally | Run only `streamlit run app.py` OR only `run_server.py`, not both |
+| Iframe blocked | Set `EXTRA_ALLOWED_ORIGINS` on Render to your `*.streamlit.app` URL |
 
-## Optional: HTML UI locally
+---
 
-`python run_server.py` still serves the original Bootstrap frontend at http://localhost:8000 for local use. Streamlit Cloud uses the native pages above.
+## Why two services?
+
+| Platform | Role |
+|----------|------|
+| **Render** | Runs Python + FastAPI + MongoDB + serves `frontend/` (the awesome UI) |
+| **Streamlit Cloud** | Thin wrapper required by your deploy target — embeds Render URL |
+
+No Netlify needed. No native Streamlit forms — only the original HTML UI.

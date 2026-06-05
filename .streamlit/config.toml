@@ -15,4 +15,4 @@ gatherUsageStats = false
 
 [client]
 toolbarMode = "viewer"
-showSidebarNavigation = true
+showSidebarNavigation = false

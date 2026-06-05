@@ -1,9 +1,9 @@
-# Deploy CivicLens API on Render (free tier works; first boot may be slow)
-# Then set API_URL in Netlify to this service URL.
+# Full CivicLens app (same UI as python run_server.py) — host on Render free tier.
+# Then set APP_URL in Streamlit Cloud secrets to this service URL.
 
 services:
   - type: web
-    name: civiclens-api
+    name: civiclens-app
     runtime: python
     plan: free
     buildCommand: pip install -r requirements-api.txt
