@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import Scope, Receive, Send
 from backend.app.config import settings
 from backend.app.database import Database
@@ -48,11 +49,27 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class AllowStreamlitIframeMiddleware(BaseHTTPMiddleware):
+    """Allow the HTML UI to load inside Streamlit's iframe shell."""
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if not request.url.path.startswith("/api"):
+            response.headers["Content-Security-Policy"] = (
+                "frame-ancestors 'self' http://localhost:* http://127.0.0.1:* "
+                "https://*.streamlit.app https://share.streamlit.io"
+            )
+        return response
+
+
+app.add_middleware(AllowStreamlitIframeMiddleware)
 
 # Events
 @app.on_event("startup")

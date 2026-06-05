@@ -28,12 +28,25 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:8501",
         "*",
     ]
+    EXTRA_ALLOWED_ORIGINS: str = ""
 
     @property
     def google_maps_key(self) -> str:
         return self.GOOGLE_MAP_API_KEY.strip()
+
+    @property
+    def cors_origins(self) -> list:
+        origins = list(self.ALLOWED_ORIGINS)
+        if self.EXTRA_ALLOWED_ORIGINS:
+            origins.extend(
+                o.strip() for o in self.EXTRA_ALLOWED_ORIGINS.split(",") if o.strip()
+            )
+        return origins
 
     class Config:
         env_file = str(BACKEND_ENV if BACKEND_ENV.exists() else ROOT_ENV)

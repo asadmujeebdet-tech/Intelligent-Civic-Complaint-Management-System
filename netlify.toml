@@ -1,0 +1,26 @@
+# CivicLens AI — Netlify (frontend)
+# Backend API must be hosted separately (see NETLIFY.md + render.yaml)
+
+[build]
+  publish = "frontend"
+  command = "python scripts/netlify-build.py"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
+
+# Security headers for static site
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

@@ -1,0 +1,22 @@
+# Deploy CivicLens API on Render (free tier works; first boot may be slow)
+# Then set API_URL in Netlify to this service URL.
+
+services:
+  - type: web
+    name: civiclens-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-api.txt
+    startCommand: python run_api.py
+    healthCheckPath: /health
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: DB_NAME
+        value: hackathon
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_MAP_API_KEY
+        sync: false
+      - key: EXTRA_ALLOWED_ORIGINS
+        sync: false
