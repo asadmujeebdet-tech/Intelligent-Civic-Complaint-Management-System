@@ -1,11 +1,4 @@
-"""Use run_server.py instead:  streamlit run run_server.py"""
-import sys
+"""Alias — use: streamlit run run_server.py  OR  python run_server.py"""
+import runpy
 
-if "streamlit" in sys.modules:
-    import runpy
-
-    runpy.run_path("run_server.py", run_name="__main__")
-elif __name__ == "__main__":
-    import runpy
-
-    runpy.run_path("run_server.py", run_name="__main__")
+runpy.run_path("run_server.py", run_name="__main__")

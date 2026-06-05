@@ -1,8 +1,8 @@
 """
 CivicLens AI — main entry point
 
-  streamlit run run_server.py   → HTML UI (Bootstrap, same as localhost:8000)
-  python run_server.py          → direct API + HTML at http://localhost:8000
+  streamlit run run_server.py   → same HTML UI as python run_server.py (no Streamlit sidebar)
+  python run_server.py          → http://localhost:8000
 """
 import logging
 import sys
@@ -10,16 +10,9 @@ import sys
 logging.basicConfig(level=logging.INFO)
 
 if "streamlit" in sys.modules:
-    from backend.app.deployment_config import should_use_html_iframe
+    from streamlit_ui.shell import render_civiclens_app
 
-    if should_use_html_iframe():
-        from streamlit_ui.shell import render_civiclens_app
-
-        render_civiclens_app("/")
-    else:
-        from streamlit_ui.native_home import render_native_app
-
-        render_native_app()
+    render_civiclens_app("/")
 
 elif __name__ == "__main__":
     import uvicorn
