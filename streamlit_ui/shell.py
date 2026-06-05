@@ -153,7 +153,7 @@ def render_civiclens_app(path: str = "/") -> None:
                 ```
                 """
             )
-            st.caption("Full setup guide: **STREAMLIT_CLOUD.md** in the project repo.")
+            st.caption("Deploy the full app on Render, then set APP_URL to that URL.")
             return
         with st.spinner("Starting CivicLens AI…"):
             if not _ensure_local_server():

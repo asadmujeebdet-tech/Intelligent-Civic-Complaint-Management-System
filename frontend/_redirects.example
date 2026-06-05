@@ -1,3 +1,0 @@
-# Copy to _redirects at build time (see scripts/netlify-build.sh)
-# Replace with your Render/Railway API URL:
-/api/*  https://civiclens-api.onrender.com/api/:splat  200!
