@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - CivicLens AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css?v=6" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top"></nav>
+
+    <div class="container-fluid py-4 px-3 px-md-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
+            <h1 class="h3 mb-0"><i class="fas fa-shield-alt text-primary"></i> Complaint Management</h1>
+            <span class="badge bg-primary">Official Portal</span>
+        </div>
+
+        <div class="card saas-card mb-4">
+            <div class="card-body">
+                <div class="row g-2 g-md-3">
+                    <div class="col-12 col-md-4">
+                        <input type="text" id="filterSearch" class="form-control" placeholder="Search ID, text, location...">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <select id="filterStatus" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option>Open</option><option>Under Review</option><option>Assigned</option>
+                            <option>In Progress</option><option>Resolved</option><option>Closed</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <select id="filterCategory" class="form-select">
+                            <option value="">All Categories</option>
+                            <option>Roads</option><option>Water</option><option>Electricity</option>
+                            <option>Sanitation</option><option>Traffic</option>
+                            <option>Public Safety</option><option>Environment</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <select id="filterSeverity" class="form-select">
+                            <option value="">All Severities</option>
+                            <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <input type="text" id="filterLocation" class="form-control" placeholder="Location">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card saas-card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover admin-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th><th>Category</th><th>Severity</th>
+                                <th class="d-none d-md-table-cell">Location</th>
+                                <th>Status</th><th class="d-none d-sm-table-cell">Priority</th><th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="complaintsTableBody">
+                            <tr><td colspan="7" class="text-center py-4">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Centered Complaint Modal -->
+    <div class="modal fade" id="complaintModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content complaint-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-alt"></i> Complaint Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="drawerContent"></div>
+                <div class="modal-footer flex-column align-items-stretch">
+                    <h6 class="mb-2">Update Complaint</h6>
+                    <div class="row g-2">
+                        <div class="col-12 col-sm-6">
+                            <select id="updateStatus" class="form-select form-select-sm">
+                                <option>Open</option><option>Under Review</option><option>Assigned</option>
+                                <option>In Progress</option><option>Resolved</option><option>Closed</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <input type="text" id="updateDepartment" class="form-control form-control-sm" placeholder="Assigned Department">
+                        </div>
+                        <div class="col-12">
+                            <textarea id="updateNotes" class="form-control form-control-sm" rows="2" placeholder="Resolution notes"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-primary btn-sm w-100" onclick="saveComplaintUpdate()">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white text-center py-4 mt-5">
+        <p class="mb-0 small">&copy; 2024 CivicLens AI</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/navbar.js?v=6"></script>
+    <script src="js/api.js?v=5"></script>
+    <script src="js/admin.js?v=5"></script>
+    <script src="js/chatbot.js?v=5"></script>
+</body>
+</html>
