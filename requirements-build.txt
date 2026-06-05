@@ -1,0 +1,2 @@
+# Netlify static build only — build.py uses Python stdlib (no installs needed).
+# Use this instead of requirements.txt on Netlify for fast builds.

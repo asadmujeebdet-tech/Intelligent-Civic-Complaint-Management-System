@@ -1,14 +1,18 @@
-# CivicLens AI — Netlify (frontend)
-# Backend API must be hosted separately (see NETLIFY.md + render.yaml)
+# CivicLens AI — Netlify deployment
+# Match these in Netlify UI → Site configuration → Build & deploy
 
 [build]
-  publish = "frontend"
-  command = "python scripts/netlify-build.py"
+  base = "/"
+  command = "pip install -r requirements-build.txt && python build.py"
+  publish = "dist"
+  functions = "netlify/functions"
 
 [build.environment]
   PYTHON_VERSION = "3.11"
 
-# Security headers for static site
+[functions]
+  directory = "netlify/functions"
+
 [[headers]]
   for = "/*"
   [headers.values]

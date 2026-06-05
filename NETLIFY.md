@@ -66,9 +66,14 @@ Verify: open `https://YOUR-API.onrender.com/health` → `{"status":"healthy",...
 
 1. Go to [netlify.com](https://www.netlify.com) → **Add new site** → **Import an existing project**.
 2. Connect your GitHub repo.
-3. Netlify reads `netlify.toml` automatically:
-   - **Publish directory:** `frontend`
-   - **Build command:** `python scripts/netlify-build.py`
+3. Netlify reads `netlify.toml` automatically (or set manually in the UI):
+
+   | Setting | Value |
+   |---------|--------|
+   | Base directory | `/` |
+   | Build command | `pip install -r requirements-build.txt && python build.py` |
+   | Publish directory | `dist` |
+   | Functions directory | `netlify/functions` |
 4. Add **Environment variable** (required):
 
    | Key | Value |
@@ -77,7 +82,9 @@ Verify: open `https://YOUR-API.onrender.com/health` → `{"status":"healthy",...
 
 5. Click **Deploy site**.
 
-The build script creates `frontend/_redirects` so browser calls to `/api/v1/...` on Netlify are proxied to your Render API (no CORS changes needed in the frontend).
+`build.py` copies `frontend/` → `dist/` and writes `dist/_redirects` so `/api/v1/...` on Netlify is proxied to your Render API.
+
+> Use `requirements-build.txt` (not `requirements.txt`) on Netlify — the full `requirements.txt` installs ML packages and will slow or fail the build.
 
 ### From Netlify CLI
 
