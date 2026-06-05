@@ -6,7 +6,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import Scope, Receive, Send
 from backend.app.config import settings
 from backend.app.database import Database
+from backend.app.deployment_config import get_api_v1_base, get_backend_api_url, is_localhost_url
 from backend.app.routes import complaints, maps, chatbot
+from fastapi.responses import Response
 import logging
 import os
 from pathlib import Path
@@ -15,7 +17,7 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-APP_ASSET_VERSION = "7"
+APP_ASSET_VERSION = "8"
 
 
 class NoCacheStaticFiles(StaticFiles):
@@ -106,6 +108,21 @@ async def legacy_submit_feedback(complaint_id: str, feedback: FeedbackCreate):
     if not success:
         raise HTTPException(status_code=400, detail="Feedback not allowed.")
     return FeedbackResponse(success=True)
+
+@app.get("/js/config.js")
+async def frontend_runtime_config():
+    """Runtime API base for frontend — avoids hardcoded localhost in production."""
+    api_base = get_api_v1_base() or "/api/v1"
+    backend = get_backend_api_url()
+    if is_localhost_url(backend):
+        logger.warning("BACKEND_API_URL is localhost — browsers on mobile cannot reach this")
+    js = f'window.CIVICLENS_CONFIG={{API_BASE_URL:"{api_base}"}};'
+    return Response(
+        content=js,
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache"},
+    )
+
 
 # Health check
 @app.get("/health")

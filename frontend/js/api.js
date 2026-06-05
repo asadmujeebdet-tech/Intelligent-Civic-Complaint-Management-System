@@ -1,18 +1,29 @@
-const API_BASE_URL = '/api/v1';
+const API_BASE_URL = (window.CIVICLENS_CONFIG && window.CIVICLENS_CONFIG.API_BASE_URL) || '/api/v1';
+
+function isLocalhostApi() {
+    return /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(API_BASE_URL);
+}
+
+if (isLocalhostApi() && typeof window !== 'undefined' && window.location.hostname.includes('streamlit.app')) {
+    console.error(
+        '[CivicLens] API points to localhost inside Streamlit Cloud — set BACKEND_API_URL to your Render HTTPS URL.'
+    );
+}
 
 class APIClient {
     constructor(baseURL = API_BASE_URL) {
-        this.baseURL = baseURL;
+        this.baseURL = baseURL.replace(/\/$/, '');
     }
 
     async request(endpoint, options = {}) {
-        const url = `${this.baseURL}${endpoint}`;
+        const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+        const url = `${this.baseURL}${path}`;
         const config = {
             ...options,
             headers: {
                 'Content-Type': 'application/json',
-                ...options.headers
-            }
+                ...options.headers,
+            },
         };
 
         try {
@@ -23,7 +34,7 @@ class APIClient {
             }
             return await response.json();
         } catch (error) {
-            console.error('API Error:', error);
+            console.error('API Error:', url, error);
             throw error;
         }
     }
@@ -35,14 +46,14 @@ class APIClient {
     async post(endpoint, data) {
         return this.request(endpoint, {
             method: 'POST',
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
         });
     }
 
     async patch(endpoint, data) {
         return this.request(endpoint, {
             method: 'PATCH',
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
         });
     }
 
@@ -105,12 +116,15 @@ class APIClient {
 const apiClient = new APIClient();
 
 function showError(message) {
+    const msg = message || 'Service temporarily unavailable.';
     const errorAlert = document.getElementById('errorAlert');
     const errorMessage = document.getElementById('errorMessage');
     if (errorAlert && errorMessage) {
-        errorMessage.textContent = message;
+        errorMessage.textContent = msg;
         errorAlert.classList.remove('d-none');
         setTimeout(() => errorAlert.classList.add('d-none'), 5000);
+    } else {
+        console.error(msg);
     }
 }
 
@@ -126,7 +140,7 @@ function formatDate(dateString) {
     return date.toLocaleString(undefined, {
         year: 'numeric', month: 'short', day: 'numeric',
         hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: true
+        hour12: true,
     });
 }
 
@@ -134,7 +148,7 @@ function formatStatus(status) {
     const map = {
         open: 'Open', 'in-progress': 'In Progress', resolved: 'Resolved',
         Open: 'Open', 'Under Review': 'Under Review', Assigned: 'Assigned',
-        'In Progress': 'In Progress', Resolved: 'Resolved', Closed: 'Closed'
+        'In Progress': 'In Progress', Resolved: 'Resolved', Closed: 'Closed',
     };
     return map[status] || status;
 }
@@ -143,7 +157,7 @@ function getStatusColor(status) {
     const normalized = formatStatus(status);
     const map = {
         Open: 'danger', 'Under Review': 'info', Assigned: 'primary',
-        'In Progress': 'warning', Resolved: 'success', Closed: 'secondary'
+        'In Progress': 'warning', Resolved: 'success', Closed: 'secondary',
     };
     return map[normalized] || 'secondary';
 }

@@ -1,5 +1,5 @@
 # Full CivicLens app (same UI as python run_server.py) — host on Render free tier.
-# Then set APP_URL in Streamlit Cloud secrets to this service URL.
+# Then set BACKEND_API_URL in Streamlit Cloud secrets to this service URL.
 
 services:
   - type: web
@@ -19,4 +19,4 @@ services:
       - key: GOOGLE_MAP_API_KEY
         sync: false
       - key: EXTRA_ALLOWED_ORIGINS
-        sync: false
+        value: "https://intelligentccms.streamlit.app"

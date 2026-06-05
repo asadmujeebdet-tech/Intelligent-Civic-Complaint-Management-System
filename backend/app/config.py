@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     DB_NAME: str = "hackathon"
     GEMINI_API_KEY: str = ""
     GOOGLE_MAP_API_KEY: str = ""
+    BACKEND_API_URL: str = ""
 
     API_TITLE: str = "CivicLens AI API"
     API_VERSION: str = "1.0.0"
@@ -55,7 +56,13 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Support alternate env var name
+# Support alternate env var names
 import os
+
 if not settings.GOOGLE_MAP_API_KEY and os.getenv("GOOGLE_MAPS_API_KEY"):
     settings.GOOGLE_MAP_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
+
+for _url_key in ("BACKEND_API_URL", "APP_URL", "API_URL"):
+    if not settings.BACKEND_API_URL and os.getenv(_url_key):
+        settings.BACKEND_API_URL = os.getenv(_url_key, "").rstrip("/")
+        break

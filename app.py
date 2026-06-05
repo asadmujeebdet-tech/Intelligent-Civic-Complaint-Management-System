@@ -1,10 +1,14 @@
 """
 CivicLens AI
 
-Streamlit Cloud:  streamlit run app.py   → iframes the run_server HTML UI
-Local HTML+API:    python run_server.py   → http://localhost:8000
+Streamlit Cloud:  streamlit run app.py   (requires BACKEND_API_URL secret)
+Local HTML+API:    python run_server.py
+Local Streamlit:  LOCAL_DEV=true streamlit run app.py
 """
+import logging
 import sys
+
+logging.basicConfig(level=logging.INFO)
 
 if "streamlit" in sys.modules:
     from streamlit_ui.shell import render_civiclens_app
