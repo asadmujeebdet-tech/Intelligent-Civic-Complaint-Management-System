@@ -1,13 +1,38 @@
 /**
  * Single source of truth for navigation — equal spacing, Admin same as others.
+ * BASE_PATH supports same-origin mount under Streamlit (/backend) without UI changes.
  */
 (function () {
-    const path = window.location.pathname;
+    function getBase() {
+        const cfg = window.CIVICLENS_CONFIG || {};
+        return String(cfg.BASE_PATH || '').replace(/\/$/, '');
+    }
+
+    function hrefFor(page) {
+        const BASE = getBase();
+        if (page === '/') {
+            return BASE ? `${BASE}/` : '/';
+        }
+        const name = page.replace(/^\//, '');
+        return BASE ? `${BASE}/${name}` : `/${name}`;
+    }
 
     function isActive(href) {
-        if (href === '/') return path === '/' || path.endsWith('/index.html') || path === '';
+        const path = window.location.pathname;
+        const BASE = getBase();
+        const target = hrefFor(href);
+        if (href === '/') {
+            return (
+                path === target ||
+                path === `${BASE}/` ||
+                path === BASE ||
+                path.endsWith('/index.html') ||
+                path === '/' ||
+                path === ''
+            );
+        }
         const page = href.replace(/^\//, '');
-        return path.endsWith(page) || path === href;
+        return path.endsWith(page) || path === target;
     }
 
     const links = [
@@ -21,14 +46,14 @@
     function buildNavbar() {
         const items = links.map(l => `
             <li class="nav-item">
-                <a class="nav-link${isActive(l.href) ? ' active' : ''}" href="${l.href}">${l.label}</a>
+                <a class="nav-link${isActive(l.href) ? ' active' : ''}" href="${hrefFor(l.href)}">${l.label}</a>
             </li>
         `).join('');
 
         return `
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
             <div class="container-fluid navbar-inner">
-                <a class="navbar-brand" href="/">
+                <a class="navbar-brand" href="${hrefFor('/')}">
                     <i class="fas fa-landmark"></i> CivicLens AI
                 </a>
                 <div class="collapse navbar-collapse navbar-links-wrap" id="navbarNav">

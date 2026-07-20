@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -6,7 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import Scope, Receive, Send
 from backend.app.config import settings
 from backend.app.database import Database
-from backend.app.deployment_config import get_api_v1_base, get_backend_api_url, is_localhost_url
+from backend.app.deployment_config import get_backend_api_url, is_localhost_url
 from backend.app.routes import complaints, maps, chatbot
 from fastapi.responses import Response
 import logging
@@ -110,13 +110,30 @@ async def legacy_submit_feedback(complaint_id: str, feedback: FeedbackCreate):
     return FeedbackResponse(success=True)
 
 @app.get("/js/config.js")
-async def frontend_runtime_config():
+async def frontend_runtime_config(request: Request):
     """Runtime API base for frontend — avoids hardcoded localhost in production."""
-    api_base = get_api_v1_base() or "/api/v1"
-    backend = get_backend_api_url()
-    if is_localhost_url(backend):
+    # When mounted under Streamlit at /backend, root_path is "/backend"
+    root_path = (request.scope.get("root_path") or "").rstrip("/")
+    mount = root_path or ""
+    if mount:
+        api_base = f"{mount}/api/v1"
+        base_path = mount
+    else:
+        # Standalone `python app.py` — always same-origin /api/v1
+        backend = get_backend_api_url()
+        if backend and not is_localhost_url(backend):
+            api_base = f"{backend}/api/v1"
+        else:
+            api_base = "/api/v1"
+        base_path = ""
+    if is_localhost_url(get_backend_api_url()):
         logger.warning("BACKEND_API_URL is localhost — browsers on mobile cannot reach this")
-    js = f'window.CIVICLENS_CONFIG={{API_BASE_URL:"{api_base}"}};'
+    js = (
+        "window.CIVICLENS_CONFIG={"
+        f'API_BASE_URL:"{api_base}",'
+        f'BASE_PATH:"{base_path}"'
+        "};"
+    )
     return Response(
         content=js,
         media_type="application/javascript",

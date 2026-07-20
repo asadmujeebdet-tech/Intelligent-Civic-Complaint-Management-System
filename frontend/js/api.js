@@ -6,7 +6,7 @@ function isLocalhostApi() {
 
 if (isLocalhostApi() && typeof window !== 'undefined' && window.location.hostname.includes('streamlit.app')) {
     console.error(
-        '[CivicLens] API points to localhost inside Streamlit Cloud — set BACKEND_API_URL to your Render HTTPS URL.'
+        '[CivicLens] API points to localhost inside Streamlit Cloud — use the /backend mount or set BACKEND_API_URL.'
     );
 }
 

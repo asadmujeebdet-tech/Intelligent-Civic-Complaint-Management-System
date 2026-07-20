@@ -1,8 +1,9 @@
 """
 Streamlit wrapper — shows ONLY the Bootstrap HTML UI (zero Streamlit sidebar/nav).
-Identical to opening http://localhost:8000 after python run_server.py
+Identical to opening http://localhost:8000 after python app.py
 """
 import logging
+import os
 import socket
 import threading
 import time
@@ -11,7 +12,11 @@ import urllib.request
 
 import streamlit as st
 
-from backend.app.deployment_config import get_backend_api_url, get_iframe_url, is_streamlit_cloud
+from backend.app.deployment_config import (
+    get_backend_api_url,
+    get_iframe_url,
+    get_local_dev_url,
+)
 
 logger = logging.getLogger("civiclens.shell")
 
@@ -67,9 +72,26 @@ def _url_healthy(base: str) -> bool:
         return False
 
 
-def _start_local_api() -> bool:
-    from backend.app.deployment_config import get_local_dev_url
+def _streamlit_listen_base() -> str:
+    port = (
+        os.getenv("STREAMLIT_SERVER_PORT")
+        or os.getenv("SERVER_PORT")
+        or os.getenv("PORT")
+        or "8501"
+    )
+    return f"http://127.0.0.1:{port}"
 
+
+def _health_base_for_iframe(iframe_url: str) -> str:
+    """Resolve a server-side URL for health checks (relative → loopback)."""
+    if iframe_url.startswith("http://") or iframe_url.startswith("https://"):
+        return iframe_url.rstrip("/")
+    # Same-origin mount e.g. /backend/
+    path = iframe_url if iframe_url.startswith("/") else f"/{iframe_url}"
+    return f"{_streamlit_listen_base()}{path.rstrip('/')}"
+
+
+def _start_local_api() -> bool:
     local_base = get_local_dev_url()
     port = int(local_base.split(":")[-1])
 
@@ -117,24 +139,24 @@ def render_civiclens_app(path: str = "/") -> None:
     url = get_iframe_url(path)
     backend = get_backend_api_url()
 
-    # Streamlit Cloud without a public backend URL cannot embed localhost HTML
-    if is_streamlit_cloud() and not url:
-        st.error("HTML UI requires a public backend URL on Streamlit Cloud.")
-        st.markdown(
-            """
-            For the **same UI as `python run_server.py`** locally, run:
-
-            ```bash
-            python run_server.py
-            ```
-            Then open **http://localhost:8000**
-
-            For cloud deploy, add a public `BACKEND_API_URL` in Secrets, or use local hosting.
-            """
-        )
+    if not url:
+        st.error("Unable to resolve HTML UI URL.")
+        st.caption("Run `python app.py` and open http://localhost:8000")
         return
 
-    if backend:
+    if url.startswith("/"):
+        # Same-origin FastAPI mount (Streamlit Cloud + local streamlit run)
+        health_base = _health_base_for_iframe(url)
+        if not _url_healthy(health_base):
+            with st.spinner("Loading CivicLens AI…"):
+                for _ in range(30):
+                    if _url_healthy(health_base):
+                        break
+                    time.sleep(0.5)
+        if not _url_healthy(health_base):
+            # Mount may still be routing; try in-process DB ping instead of failing hard
+            logger.warning("Same-origin health check soft-fail for %s", health_base)
+    elif backend:
         if not _url_healthy(backend):
             with st.spinner("Connecting…"):
                 for _ in range(25):
@@ -148,9 +170,10 @@ def render_civiclens_app(path: str = "/") -> None:
         with st.spinner("Loading CivicLens AI…"):
             if not _start_local_api():
                 st.error("Service temporarily unavailable.")
-                st.code("python run_server.py", language="bash")
+                st.code("python app.py", language="bash")
                 st.caption("Run the command above in a terminal, then refresh.")
                 return
+        url = get_iframe_url(path) or f"{get_local_dev_url()}{path}"
 
     logger.info("HTML UI iframe: %s", url)
 

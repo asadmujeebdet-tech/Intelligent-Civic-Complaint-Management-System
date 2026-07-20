@@ -7,6 +7,8 @@ font = "sans serif"
 
 [server]
 headless = true
+# Required for streamlit.starlette.App (FastAPI HTML UI mount on Cloud)
+useStarlette = true
 
 [browser]
 gatherUsageStats = false
